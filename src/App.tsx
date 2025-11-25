@@ -10,6 +10,8 @@ import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { MentalWellnessToolkit } from './components/MentalWellnessToolkit';
 import { SleepCoachScreen } from './components/SleepCoachScreen';
 import { OnboardingFlow } from './components/OnboardingFlow';
+import { AuthScreen } from './components/AuthScreen';
+import { apiClient } from './services/api';
 
 /**
  * AURA - AI Wellness & Meditation App
@@ -27,26 +29,41 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
   const [userName, setUserName] = useState<string>('');
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentMood, setCurrentMood] = useState<'calm' | 'anxious' | 'happy' | 'neutral'>('calm');
 
-  // Check if user has completed onboarding
+  // Check authentication and onboarding status
   useEffect(() => {
-    const savedName = localStorage.getItem('aura_user_name');
+    const token = localStorage.getItem('aura_auth_token');
+    const savedUser = localStorage.getItem('aura_user');
     const onboardingComplete = localStorage.getItem('aura_onboarding_complete');
     
-    if (savedName && onboardingComplete) {
-      setUserName(savedName);
-      setHasCompletedOnboarding(true);
+    if (token && savedUser) {
+      const user = JSON.parse(savedUser);
+      setUserName(user.name);
+      setIsAuthenticated(true);
+      
+      if (onboardingComplete) {
+        setHasCompletedOnboarding(true);
+      }
     }
   }, []);
 
+  const handleAuthSuccess = (user: any) => {
+    setUserName(user.name);
+    setIsAuthenticated(true);
+  };
+
   const handleOnboardingComplete = (name: string, mood: 'calm' | 'anxious' | 'happy' | 'neutral') => {
-    setUserName(name);
     setCurrentMood(mood);
     setHasCompletedOnboarding(true);
-    localStorage.setItem('aura_user_name', name);
     localStorage.setItem('aura_onboarding_complete', 'true');
   };
+
+  // Show auth screen if not authenticated
+  if (!isAuthenticated) {
+    return <AuthScreen onAuthSuccess={handleAuthSuccess} />;
+  }
 
   // Show onboarding if not completed
   if (!hasCompletedOnboarding) {
